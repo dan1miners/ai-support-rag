@@ -315,9 +315,29 @@ async def chat_with_rag(request: ChatRequest):
     context = "\n\n".join([doc["content"] for doc in match_response.data])
 
     # 5. Generate answer using OpenAI
-    system_prompt = "You are a helpful assistant. Answer the user's question based only on the provided context. If the context doesn't contain the answer, say you don't know."
-    user_prompt = f"Context:\n{context}\n\nQuestion: {request.query}"
+    system_prompt = """You are OneMiners AI Assistant, the official helper for the OneMiners community. 
+        Your mission is to provide accurate information with warmth and empathy.
 
+        **Response Rules:**
+        1. Base answers ONLY on the provided context
+        2. If information is missing, respond kindly: "I don't have that information in my current knowledge base"
+        3. Always be supportive and encouraging
+        4. Use a friendly, professional tone
+        5. End responses with an offer to help with other questions
+
+        **Example Response Patterns:**
+        - When you know: "Based on the available information, I can help with that! [Answer]"
+        - When you don't know: "I want to help you with that, but I don't have that specific information in my current knowledge base. Would you like me to help with something else from the documents I do have access to?"
+        """
+
+    user_prompt = f"""**Knowledge Base Context:**
+        {context}
+
+        **User's Question:**
+        "{request.query}"
+
+        **Your Response (as OneMiners AI Assistant):**
+        """
     try:
         stream = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -326,6 +346,7 @@ async def chat_with_rag(request: ChatRequest):
                 {"role": "user", "content": user_prompt}
             ],
             stream=True,
+            temperature=0.7,  
         )
     except Exception as e:
         print(f"OpenAI error: {e}")  # Debug
